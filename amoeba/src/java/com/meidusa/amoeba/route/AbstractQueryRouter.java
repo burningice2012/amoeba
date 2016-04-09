@@ -274,8 +274,27 @@ public abstract class  AbstractQueryRouter<T extends Connection,V> implements Qu
                                         }
                                         matched = true;
                                     } else if(rule.result == RuleResult.POOLNAME){
-                                    	String matchedPoolsString = ((Comparative) result).getValue().toString();
-                                    	String[] poolNamesMatched = matchedPoolsString.split(",");
+                                    	// String matchedPoolsString = ((Comparative) result).getValue().toString();
+                                    	// String[] poolNamesMatched = matchedPoolsString.split(",");
+                                    	// 修复cat操作生成无效以及批量insert时无法正常获取poolname的bug by liaoxj, 2016/4/9
+                                    	String[] poolNamesMatched = null;
+                                    	if(result instanceof ComparativeBaseList) {
+                                    		List<Comparative> list = ((ComparativeBaseList)result).getList();
+                                    		if(list != null) {
+                                    			poolNamesMatched = new String[list.size()];
+                                    			for(int k = 0; k < list.size(); ++k) {
+                                    				String poolName = list.get(k).getValue().toString();
+                                    				int commaIndex = poolName.indexOf(';');
+                                    				if(commaIndex != -1) {
+                                    					poolName = poolName.substring(0, commaIndex);
+                                    				}
+                                    				poolNamesMatched[k] = poolName;
+                                    			}
+                                    		}
+                                    	} else {
+                                    		String matchedPoolsString = ((Comparative) result).getValue().toString();
+                                    		poolNamesMatched = StringUtil.split(matchedPoolsString,";,");
+                                    	}
                                     	
                                     	if(poolNamesMatched != null && poolNamesMatched.length >0){
                                        	for(String poolName : poolNamesMatched){
